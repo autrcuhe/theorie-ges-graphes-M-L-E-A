@@ -1,18 +1,27 @@
 digraph Eau {
-    krill [style=filled, fillcolor=green];
+ krill [style=filled, fillcolor=green];
+ adelie_penguin [style=filled, fillcolor=yellow];
+ crab_seals [style=filled, fillcolor=yellow];
+ harreng [style=filled, fillcolor=yellow];
+ weddell_seals [style=filled, fillcolor=orange];
+ emperor_penguin [style=filled, fillcolor=orange];
+ tooth_fish [style=filled, fillcolor=orange];
+ ross_seals [style=filled, fillcolor=orange];
+ leopard_seals [style=filled, fillcolor=red , color=orange, penwidth=4];
+ killerwhale [style=filled, fillcolor=purple, color=red, penwidth=4];
 krill -> adelie_penguin
-krill -> phoquecrab
+krill -> crab_seals
 krill -> harreng
 krill -> whale
 adelie_penguin -> leopard_seals
-phoquecrab -> leopard_seals
-phoquecrab -> phoque_ross
+crab_seals -> leopard_seals
+crab_seals -> ross_seals
 harreng -> weddell_seals
 harreng -> tooth_fish
 harreng -> emperor_penguin
-phoque_ross -> leopard_seals
+ross_seals-> leopard_seals
 weddell_seals -> leopard_seals
 emperor_penguin-> leopard_seals
 leopard_seals -> killerwhale
-phoque_ross -> killerwhale
+ross_seals -> killerwhale
 }
