@@ -1,1 +1,18 @@
-
+digraph Eau {
+    krill [style=filled, fillcolor=green];
+krill -> adelie_penguin
+krill -> phoquecrab
+krill -> harreng
+krill -> whale
+adelie_penguin -> leopard_seals
+phoquecrab -> leopard_seals
+phoquecrab -> phoque_ross
+harreng -> weddell_seals
+harreng -> tooth_fish
+harreng -> emperor_penguin
+phoque_ross -> leopard_seals
+weddell_seals -> leopard_seals
+emperor_penguin-> leopard_seals
+leopard_seals -> killerwhale
+phoque_ross -> killerwhale
+}
