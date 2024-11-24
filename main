@@ -46,24 +46,9 @@ void ajouter_arc(const char *source, const char *cible) {
     strcpy(arcs[nb_arcs].source, source);
     strcpy(arcs[nb_arcs].cible, cible);
     nb_arcs++;
-
-    // Ajouter les sommets associés
-    ajouter_sommet(source);
-    ajouter_sommet(cible);
 }
 
-// Fonction pour rechercher les cibles à partir d'une source donnée
-int trouver_cibles(const char *source, char cibles[][50]) {
-    int nb_cibles = 0;
-    for (int i = 0; i < nb_arcs; i++) {
-        if (strcmp(arcs[i].source, source) == 0) {
-            strcpy(cibles[nb_cibles++], arcs[i].cible);
-        }
-    }
-    return nb_cibles;
-}
-
-// Calculer les niveaux et les prédécesseurs des sommets
+// Fonction pour calculer les niveaux et prédécesseurs des sommets
 void calculer_niveaux() {
     // Initialiser les niveaux des sommets
     for (int i = 0; i < nb_sommets; i++) {
@@ -112,7 +97,7 @@ void calculer_niveaux() {
     } while (progression);
 }
 
-// Fonction récursive pour afficher tous les prédécesseurs d'un sommet
+// Afficher les prédécesseurs récursivement
 void afficher_predecesseurs(const char *sommet, char chemin[][50], int profondeur) {
     int index = -1;
     for (int i = 0; i < nb_sommets; i++) {
@@ -126,12 +111,18 @@ void afficher_predecesseurs(const char *sommet, char chemin[][50], int profondeu
     if (index != -1 && sommets[index].nb_predecesseurs > 0) {
         for (int i = 0; i < sommets[index].nb_predecesseurs; i++) {
             strcpy(chemin[profondeur], sommets[index].predecesseurs[i]);
-            for (int j = 0; j <= profondeur; j++) {
-                if (j > 0) printf("->");
-                printf("%s", chemin[j]);
+
+            // Construire la chaîne complète du chemin
+            char chemin_complet[256] = "";
+            for (int j = profondeur; j >= 0; j--) {
+                strcat(chemin_complet, chemin[j]);
+                if (j > 0) strcat(chemin_complet, "->");
             }
-            printf("\n");
-            // Remonter aux prédécesseurs
+
+            // Afficher le chemin complet
+            printf("%s\n", chemin_complet);
+
+            // Appel récursif pour continuer avec les prédécesseurs
             afficher_predecesseurs(sommets[index].predecesseurs[i], chemin, profondeur + 1);
         }
     }
@@ -158,18 +149,44 @@ int main() {
         return 1;
     }
 
-    char ligne[MAX_LIGNE];
-    while (fgets(ligne, sizeof(ligne), fichier)) {
-        char source[50], cible[50];
-        // Extraire la source et la cible à partir du format "source -> cible"
-        if (sscanf(ligne, " %[^->] -> %s ", source, cible) == 2) {
-            // Supprimer les espaces autour des noms
-            char *end;
-            while ((end = strchr(source, ' '))) *end = '\0';
-            while ((end = strchr(cible, ';'))) *end = '\0';
+    int nombre_sommets, nombre_arcs;
 
-            ajouter_arc(source, cible);
+    // Lire le nombre de sommets
+    if (fscanf(fichier, "%d", &nombre_sommets) != 1) {
+        fprintf(stderr, "Erreur de lecture du nombre de sommets.\n");
+        fclose(fichier);
+        return 1;
+    }
+    printf("Nombre de sommets : %d\n", nombre_sommets);  // Diagnostic
+
+    // Lire les noms des sommets
+    for (int i = 0; i < nombre_sommets; i++) {
+        char nom[50];
+        if (fscanf(fichier, "%s", nom) != 1) {
+            fprintf(stderr, "Erreur de lecture du sommet %d.\n", i + 1);
+            fclose(fichier);
+            return 1;
         }
+        ajouter_sommet(nom);
+    }
+
+    // Lire le nombre d'arcs
+    if (fscanf(fichier, "%d", &nombre_arcs) != 1) {
+        fprintf(stderr, "Erreur de lecture du nombre d'arcs.\n");
+        fclose(fichier);
+        return 1;
+    }
+    printf("Nombre d'arcs : %d\n", nombre_arcs);  // Diagnostic
+
+    // Lire les arcs
+    for (int i = 0; i < nombre_arcs; i++) {
+        char source[50], cible[50];
+        if (fscanf(fichier, "%s %s", source, cible) != 2) {
+            fprintf(stderr, "Erreur de lecture de l'arc %d.\n", i + 1);
+            fclose(fichier);
+            return 1;
+        }
+        ajouter_arc(source, cible);
     }
 
     fclose(fichier);
