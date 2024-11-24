@@ -1,15 +1,28 @@
-krill -> adelie_penguin
-krill -> crab_seals
-krill -> harreng
-krill -> whale
-adelie_penguin -> leopard_seals
-crab_seals -> leopard_seals
-crab_seals -> ross_seals
-harreng -> weddell_seals
-harreng -> tooth_fish
-harreng -> emperor_penguin
-ross_seals-> leopard_seals
-weddell_seals -> leopard_seals
-emperor_penguin-> leopard_seals
-leopard_seals -> killerwhale
-ross_seals -> killerwhale
+11
+krill
+adelie_penguin
+crab_seals
+harreng
+whale
+leopard_seals
+ross_seals
+weddell_seals
+tooth_fish
+emperor_penguin
+killerwhale
+15
+krill adelie_penguin
+krill crab_seals
+krill harreng
+krill whale
+adelie_penguin leopard_seals
+crab_seals leopard_seals
+crab_seals ross_seals
+harreng weddell_seals
+harreng tooth_fish
+harreng emperor_penguin
+ross_seals leopard_seals
+weddell_seals leopard_seals
+emperor_penguin leopard_seals
+leopard_seals killerwhale
+ross_seals killerwhale
