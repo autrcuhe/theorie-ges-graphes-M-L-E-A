@@ -25,7 +25,6 @@ typedef struct {
 } Sommet;
 
 
-
 // Liste des sommets
 Sommet sommets[MAX_SOMMETS];
 int nb_sommets = 0;
