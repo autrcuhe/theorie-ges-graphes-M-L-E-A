@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 
+
+
+
+
+
 #define MAX_SOMMETS 100
 #define MAX_LIGNE 256
 #define MAX_CHEMIN 100
@@ -10,6 +15,7 @@ typedef struct {
     char source[50];
     char cible[50];
 } Arc;
+
 
 // Liste pour stocker les arcs
 Arc arcs[MAX_SOMMETS];
@@ -22,6 +28,8 @@ typedef struct {
     char predecesseurs[MAX_SOMMETS][50];
     int nb_predecesseurs;
 } Sommet;
+
+
 
 // Liste des sommets
 Sommet sommets[MAX_SOMMETS];
@@ -41,12 +49,16 @@ int ajouter_sommet(const char *nom) {
     return nb_sommets++;
 }
 
+
+
 // Ajouter un arc au graphe
 void ajouter_arc(const char *source, const char *cible) {
     strcpy(arcs[nb_arcs].source, source);
     strcpy(arcs[nb_arcs].cible, cible);
     nb_arcs++;
 }
+
+
 
 // Fonction pour calculer les niveaux et prédécesseurs des sommets
 void calculer_niveaux() {
@@ -96,6 +108,7 @@ void calculer_niveaux() {
         niveau_actuel++;
     } while (progression);
 }
+
 
 // Afficher les prédécesseurs récursivement
 void afficher_predecesseurs(const char *sommet, char chemin[][50], int profondeur) {
@@ -212,3 +225,5 @@ int main() {
 
     return 0;
 }
+
+
