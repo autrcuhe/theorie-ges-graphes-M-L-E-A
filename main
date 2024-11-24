@@ -12,6 +12,8 @@ typedef struct {
 } Arc;
 
 
+
+
 // Liste pour stocker les arcs
 Arc arcs[MAX_SOMMETS];
 int nb_arcs = 0;
