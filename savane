@@ -1,0 +1,16 @@
+
+digraph Savane {
+    herbe [style=filled, fillcolor=green];
+    zebre [style=filled, fillcolor=yellow];
+    gazelle [style=filled, fillcolor=yellow];
+    lion [style=filled, fillcolor=orange, color=yellow];
+    vautour [style=filled, fillcolor=red];
+
+herbe -> zebre [label="0.80"];
+herbe -> gazelle [label="0.85"];
+zebre -> lion [label="0.5"];
+zebre -> vautour [label="0.33"];
+gazelle -> vautour [label="0.33"];
+gazelle -> lion [label="0.5"];
+lion -> vautour [label="0.33"];
+}
