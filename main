@@ -1,7 +1,197 @@
 #include <stdio.h>
+#include <string.h>
 
-int main() {
-    printf("Hello, World!\n");
-    return 0;
+#define MAX_SOMMETS 100
+#define MAX_LIGNE 256
+#define MAX_CHEMIN 100
+
+// Structure pour représenter un arc dans le graphe
+typedef struct {
+    char source[50];
+    char cible[50];
+} Arc;
+
+// Liste pour stocker les arcs
+Arc arcs[MAX_SOMMETS];
+int nb_arcs = 0;
+
+// Structure pour représenter un sommet avec son niveau et ses prédécesseurs
+typedef struct {
+    char nom[50];
+    int niveau;
+    char predecesseurs[MAX_SOMMETS][50];
+    int nb_predecesseurs;
+} Sommet;
+
+// Liste des sommets
+Sommet sommets[MAX_SOMMETS];
+int nb_sommets = 0;
+
+// Fonction pour ajouter un sommet si nécessaire
+int ajouter_sommet(const char *nom) {
+    for (int i = 0; i < nb_sommets; i++) {
+        if (strcmp(sommets[i].nom, nom) == 0) {
+            return i; // Sommet déjà existant
+        }
+    }
+    // Ajouter un nouveau sommet
+    strcpy(sommets[nb_sommets].nom, nom);
+    sommets[nb_sommets].niveau = -1; // Niveau non défini au départ
+    sommets[nb_sommets].nb_predecesseurs = 0;
+    return nb_sommets++;
 }
 
+// Ajouter un arc au graphe
+void ajouter_arc(const char *source, const char *cible) {
+    strcpy(arcs[nb_arcs].source, source);
+    strcpy(arcs[nb_arcs].cible, cible);
+    nb_arcs++;
+
+    // Ajouter les sommets associés
+    ajouter_sommet(source);
+    ajouter_sommet(cible);
+}
+
+// Fonction pour rechercher les cibles à partir d'une source donnée
+int trouver_cibles(const char *source, char cibles[][50]) {
+    int nb_cibles = 0;
+    for (int i = 0; i < nb_arcs; i++) {
+        if (strcmp(arcs[i].source, source) == 0) {
+            strcpy(cibles[nb_cibles++], arcs[i].cible);
+        }
+    }
+    return nb_cibles;
+}
+
+// Calculer les niveaux et les prédécesseurs des sommets
+void calculer_niveaux() {
+    // Initialiser les niveaux des sommets
+    for (int i = 0; i < nb_sommets; i++) {
+        sommets[i].niveau = -1;
+        sommets[i].nb_predecesseurs = 0;
+    }
+
+    // Les sommets sans prédécesseurs sont au niveau 1
+    for (int i = 0; i < nb_sommets; i++) {
+        int est_source = 1;
+        for (int j = 0; j < nb_arcs; j++) {
+            if (strcmp(sommets[i].nom, arcs[j].cible) == 0) {
+                est_source = 0;
+                break;
+            }
+        }
+        if (est_source) {
+            sommets[i].niveau = 1;
+        }
+    }
+
+    // Explorer les niveaux suivants
+    int niveau_actuel = 1;
+    int progression;
+    do {
+        progression = 0;
+        for (int i = 0; i < nb_arcs; i++) {
+            int index_source = -1, index_cible = -1;
+            for (int j = 0; j < nb_sommets; j++) {
+                if (strcmp(sommets[j].nom, arcs[i].source) == 0) index_source = j;
+                if (strcmp(sommets[j].nom, arcs[i].cible) == 0) index_cible = j;
+            }
+
+            if (sommets[index_source].niveau == niveau_actuel) {
+                // Ajout du prédécesseur pour la cible
+                if (sommets[index_cible].niveau == -1) {
+                    sommets[index_cible].niveau = niveau_actuel + 1;
+                    strcpy(sommets[index_cible].predecesseurs[sommets[index_cible].nb_predecesseurs++], arcs[i].source);
+                    progression = 1;
+                } else if (sommets[index_cible].niveau == niveau_actuel + 1) {
+                    strcpy(sommets[index_cible].predecesseurs[sommets[index_cible].nb_predecesseurs++], arcs[i].source);
+                }
+            }
+        }
+        niveau_actuel++;
+    } while (progression);
+}
+
+// Fonction récursive pour afficher tous les prédécesseurs d'un sommet
+void afficher_predecesseurs(const char *sommet, char chemin[][50], int profondeur) {
+    int index = -1;
+    for (int i = 0; i < nb_sommets; i++) {
+        if (strcmp(sommets[i].nom, sommet) == 0) {
+            index = i;
+            break;
+        }
+    }
+
+    // Si le sommet a des prédécesseurs
+    if (index != -1 && sommets[index].nb_predecesseurs > 0) {
+        for (int i = 0; i < sommets[index].nb_predecesseurs; i++) {
+            strcpy(chemin[profondeur], sommets[index].predecesseurs[i]);
+            for (int j = 0; j <= profondeur; j++) {
+                if (j > 0) printf("->");
+                printf("%s", chemin[j]);
+            }
+            printf("\n");
+            // Remonter aux prédécesseurs
+            afficher_predecesseurs(sommets[index].predecesseurs[i], chemin, profondeur + 1);
+        }
+    }
+}
+
+// Afficher les sommets et leurs prédécesseurs par niveau
+void afficher_niveaux_et_predecesseurs(int niveau_selectionne) {
+    printf("Affichage des sommets au niveau %d :\n", niveau_selectionne);
+    for (int i = 0; i < nb_sommets; i++) {
+        if (sommets[i].niveau == niveau_selectionne) {
+            printf("Sommet: %s, Niveau: %d\n", sommets[i].nom, sommets[i].niveau);
+            printf("  Prédécesseurs: \n");
+            // Tableau temporaire pour stocker le chemin
+            char chemin[MAX_CHEMIN][50];
+            afficher_predecesseurs(sommets[i].nom, chemin, 0);
+        }
+    }
+}
+
+int main() {
+    FILE *fichier = fopen("doc.txt", "r");
+    if (!fichier) {
+        perror("Erreur d'ouverture du fichier");
+        return 1;
+    }
+
+    char ligne[MAX_LIGNE];
+    while (fgets(ligne, sizeof(ligne), fichier)) {
+        char source[50], cible[50];
+        // Extraire la source et la cible à partir du format "source -> cible"
+        if (sscanf(ligne, " %[^->] -> %s ", source, cible) == 2) {
+            // Supprimer les espaces autour des noms
+            char *end;
+            while ((end = strchr(source, ' '))) *end = '\0';
+            while ((end = strchr(cible, ';'))) *end = '\0';
+
+            ajouter_arc(source, cible);
+        }
+    }
+
+    fclose(fichier);
+
+    // Calculer les niveaux et les prédécesseurs
+    calculer_niveaux();
+
+    int niveau_selectionne;
+    while (1) {
+        // Demander à l'utilisateur de choisir un niveau
+        printf("Choisissez un niveau (1-4) ou tapez 5 pour quitter : ");
+        scanf("%d", &niveau_selectionne);
+
+        if (niveau_selectionne == 5) {
+            printf("Fin du programme.\n");
+            break; // Quitter le programme
+        } else if (niveau_selectionne >= 1 && niveau_selectionne <= 4) {
+            afficher_niveaux_et_predecesseurs(niveau_selectionne);
+        } else {
+            printf("Choix invalide. Veuillez entrer un nombre entre 1 et 5.\n");
+        }
+    }
+
+    return 0;
+}
