@@ -5,14 +5,14 @@ matiere_organique [style=filled, fillcolor=green, label="Matiere organique\n(feu
 mousses_lichens [style=filled, fillcolor=green, label="Mousses et lichens"];
 larves [style=filled, fillcolor=yellow, label="Larves de mouches"];
 coleopteres [style=filled, fillcolor=yellow, label="Coleopteres"];
-escargots [style=filled, fillcolor=yellow, label="Escargots et limaces"];
+escargots [style=filled, fillcolor=yellow, label="limaces"];
 araignees [style=filled, fillcolor=orange, label="Araignees"];
 millepattes [style=filled, fillcolor=orange, label="Mille-pattes"];
-salamandres [style=filled, fillcolor=orange, label="Salamandres et tritons"];
+salamandres [style=filled, fillcolor=orange, label="Salamandres"];
 oiseaux [style=filled, fillcolor=red, label="Oiseaux insectivores"];
 grenouilles [style=filled, fillcolor=red, label="Grenouilles"];
 bacteries [style=filled, fillcolor=blue, label="Bacteries du sol"];
-moisissures [style=filled, fillcolor=blue, label="Moisissures\n(Penicillium,\nAspergillus)"];
+moisissures [style=filled, fillcolor=blue, label="Moisissures"];
 vers [style=filled, fillcolor=blue, label="Vers de terre"];
 
 champignon -> larves [label="0.4"];
