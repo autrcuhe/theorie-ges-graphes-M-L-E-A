@@ -22,7 +22,7 @@ harreng weddell_seals 0.2
 harreng tooth_fish 0.1
 harreng emperor_penguin 0.2
 ross_seals leopard_seals 0.05
-weddell_seals leopard_seals 0.05
-emperor_penguin leopard_seals 0.05
-leopard_seals killerwhale 0.2
-ross_seals killerwhale 0.1
+weddell_seals leopard_seals 0.04
+emperor_penguin leopard_seals 0.04
+leopard_seals killerwhale 0.22
+ross_seals killerwhale 0.11
