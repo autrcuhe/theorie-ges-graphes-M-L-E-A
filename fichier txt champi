@@ -1,1 +1,35 @@
-ackd
+14
+bacteries_du_sol 1500 3
+mousses_lichens 1500 2
+moisissures 1500 3
+matieres_organiques 1300 4
+champignon 700 0.8
+larves_mouches 200 0.5
+coleopteres 300 0.61
+limaces 150 0.49
+vers_de_terre 150 0.30
+araignees 120 0.36
+salamandres 100 0.28
+mille_pattes 150 0.33
+oiseaux_insectivores 75 0.35
+grenouilles 90 0.6
+19
+bacteries_du_sol matieres_organiques 0.6
+moisissures matieres_organiques 0.6
+matieres_organiques champignon 0.75
+champignon vers_de_terre 0.20
+champignon limaces 0.35
+champignon coleopteres 0.37
+champignon larves_mouches 0.4
+mousses_lichens larves_mouches 0.75
+larves_mouches araignees 0.4
+larves_mouches salamandres 0.35
+larves_mouches mille_pattes 0.26
+coleopteres araignees 0.20
+coleopteres mille_pattes 0.35
+limaces mille_pattes 0.2
+araignees oiseaux_insectivores 0.38
+salamandres oiseaux_insectivores 0.2
+salamandres grenouilles 0.3
+mille_pattes oiseaux_insectivores 0.3
+mille_pattes grenouilles 0.2
