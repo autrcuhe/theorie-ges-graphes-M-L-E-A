@@ -1,28 +1,28 @@
 11
-krill
-adelie_penguin
-crab_seals
-harreng
-whale
-leopard_seals
-ross_seals
-weddell_seals
-tooth_fish
-emperor_penguin
-killerwhale
+krill 1500 2 
+adelie_penguin 150 0.4
+crab_seals 150 0.5
+harreng 1000 1.5
+whale 20 0.1
+leopard_seals 10 0.05
+ross_seals 80 0.5
+weddell_seals 75 0.6
+tooth_fish 100 0.6
+emperor_penguin 150 0.5
+killerwhale 10 0.1
 15
-krill adelie_penguin
-krill crab_seals
-krill harreng
-krill whale
-adelie_penguin leopard_seals
-crab_seals leopard_seals
-crab_seals ross_seals
-harreng weddell_seals
-harreng tooth_fish
-harreng emperor_penguin
-ross_seals leopard_seals
-weddell_seals leopard_seals
-emperor_penguin leopard_seals
-leopard_seals killerwhale
-ross_seals killerwhale
+krill adelie_penguin 0.3
+krill crab_seals 0.5
+krill harreng 0.5
+krill whale 0.3
+adelie_penguin leopard_seals 0.05
+crab_seals leopard_seals 0.05
+crab_seals ross_seals 0.6
+harreng weddell_seals 0.2
+harreng tooth_fish 0.1
+harreng emperor_penguin 0.2
+ross_seals leopard_seals 0.05
+weddell_seals leopard_seals 0.05
+emperor_penguin leopard_seals 0.05
+leopard_seals killerwhale 0.2
+ross_seals killerwhale 0.1
