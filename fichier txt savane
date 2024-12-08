@@ -1,11 +1,11 @@
 5
-vautour 200 0.4
+vautour 200 0.42
 herbe 1500 2
 zebre 150 0.5
 gazelle 300 0.65
 lion 50 0.35
 7
-herbe zebre 0.80
+herbe zebre 0.78
 herbe gazelle 0.85
 zebre lion 0.6
 gazelle lion 0.55
