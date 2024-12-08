@@ -151,7 +151,7 @@ int bfs(Reseau *reseau, int index_depart) {
         }
     }
 
-    // Vérifier si tous les sommets ont été visités
+    // Vérifier si tous les sommets ont été visités ou non
     for (int i = 0; i < reseau->nb_sommets; i++) {
         if (!visites[i]) {
             printf("Le sommet %s n'est pas atteint.\n", reseau->sommets[i].nom);
