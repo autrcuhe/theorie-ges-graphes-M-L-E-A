@@ -4,15 +4,15 @@ adelie_penguin 150 0.4
 crab_seals 150 0.5
 harreng 1000 1.5
 whale 20 0.1
-leopard_seals 10 0.05
+leopard_seals 10 0.06
 ross_seals 80 0.5
-weddell_seals 75 0.6
+weddell_seals 75 0.61
 tooth_fish 100 0.6
 emperor_penguin 150 0.5
 killerwhale 10 0.1
 15
 krill adelie_penguin 0.3
-krill crab_seals 0.5
+krill crab_seals 0.52
 krill harreng 0.5
 krill whale 0.3
 adelie_penguin leopard_seals 0.05
