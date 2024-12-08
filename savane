@@ -13,4 +13,4 @@ zebre -> vautour [label="0.33"];
 gazelle -> vautour [label="0.33"];
 gazelle -> lion [label="0.5"];
 lion -> vautour [label="0.33"];
-}
+}zd
