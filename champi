@@ -1,5 +1,5 @@
 digraph Champignon {
-ze
+
 champignon [style=filled, fillcolor=green, label="Champignon"];
 matiere_organique [style=filled, fillcolor=green, label="Matiere organique\n(feuilles mortes,\nbois, fruits tombes)"];
 mousses_lichens [style=filled, fillcolor=green, label="Mousses et lichens"];
