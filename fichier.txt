@@ -13,8 +13,8 @@ killerwhale 10 0.1
 15
 krill adelie_penguin 0.3
 krill crab_seals 0.52
-krill harreng 0.5
-krill whale 0.3
+krill harreng 0.53
+krill whale 0.34
 adelie_penguin leopard_seals 0.05
 crab_seals leopard_seals 0.05
 crab_seals ross_seals 0.6
