@@ -1,224 +1,807 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
 
 #define MAX_SOMMETS 100
-#define MAX_LIGNE 256
 #define MAX_CHEMIN 100
+
+// Codes pour les couleurs
+#define RESET "\033[0m"
+#define RED "\033[31m"
+#define GREEN "\033[32m"
+#define YELLOW "\033[33m"
+#define BLUE "\033[34m"
+#define MAGENTA "\033[35m"
+#define CYAN "\033[36m"
+
+
 
 typedef struct {
     char source[50];
     char cible[50];
+    float poids; // Pondération de l'arête (float pour des valeurs à virgule flottante)
+
 } Arc;
 
-
-
-
-// Liste pour stocker les arcs
-Arc arcs[MAX_SOMMETS];
-int nb_arcs = 0;
-
-// Structure pour représenter un sommet avec son niveau et ses prédécesseurs
 typedef struct {
     char nom[50];
     int niveau;
     char predecesseurs[MAX_SOMMETS][50];
     int nb_predecesseurs;
+    char successeurs[MAX_SOMMETS][50];
+    int nb_successeurs;
+    float population;
+    float capacite ;
+    float croissance;
 } Sommet;
 
+typedef struct {
+    Arc arcs[MAX_SOMMETS];
+    int nb_arcs;
+    Sommet sommets[MAX_SOMMETS];
+    int nb_sommets;
+} Reseau;
 
-// Liste des sommets
-Sommet sommets[MAX_SOMMETS];
-int nb_sommets = 0;
 
-// Fonction pour ajouter un sommet si nécessaire
-int ajouter_sommet(const char *nom) {
-    for (int i = 0; i < nb_sommets; i++) {
-        if (strcmp(sommets[i].nom, nom) == 0) {
-            return i; // Sommet déjà existant
+// Fonction pour afficher les premiers maillons (ceux qui ne consomment rien)
+void afficher_premiers_maillons(Reseau *reseau) {
+    printf("\nLes premiers maillons (ceux qui ne consomment rien) sont :\n");
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        bool a_predateur = false;
+        // Vérifier si ce sommet est consommé par un autre (arc entrant)
+        for (int j = 0; j < reseau->nb_arcs; j++) {
+            if (strcmp(reseau->arcs[j].cible, reseau->sommets[i].nom) == 0) {
+                a_predateur = true;
+                break;
+            }
+        }
+        if (!a_predateur) {
+            printf("- %s\n", reseau->sommets[i].nom);
         }
     }
-    // Ajouter un nouveau sommet
-    strcpy(sommets[nb_sommets].nom, nom);
-    sommets[nb_sommets].niveau = -1; // Niveau non défini au départ
-    sommets[nb_sommets].nb_predecesseurs = 0;
-    return nb_sommets++;
+}
+
+// Fonction pour afficher les sommets sans prédateurs (ceux qui ne sont pas consommés)
+void afficher_sans_predateurs(Reseau *reseau) {
+    printf("\nLes sommets sans prédateurs (ceux qui ne sont pas consommés) sont :\n");
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        bool a_proie = false;
+        // Vérifier si ce sommet a des arcs sortants (si ce sommet consomme quelque chose)
+        for (int j = 0; j < reseau->nb_arcs; j++) {
+            if (strcmp(reseau->arcs[j].source, reseau->sommets[i].nom) == 0) {
+                a_proie = true;
+                break;
+            }
+        }
+        if (!a_proie) {
+            printf("- %s\n", reseau->sommets[i].nom);
+        }
+    }
+}
+
+// Fonction pour afficher les sommets ayant une seule source d'alimentation
+void afficher_sommets_une_seule_source(Reseau *reseau) {
+    printf("\nLes sommets ayant une seule source d'alimentation sont :\n");
+
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        int source_count = 0;
+
+        // Compter le nombre d'arc entrant dans le sommet
+        for (int j = 0; j < reseau->nb_arcs; j++) {
+            if (strcmp(reseau->arcs[j].cible, reseau->sommets[i].nom) == 0) {
+                source_count++;
+            }
+        }
+
+        // Si le sommet a exactement une source d'alimentation
+        if (source_count == 1) {
+            printf("- %s\n", reseau->sommets[i].nom);
+        }
+    }
 }
 
 
+// Fonction BFS pour vérifier si un sommet est accessible à partir d'un autre sommet
+int bfs(Reseau *reseau, int index_depart) {
+    int file[MAX_SOMMETS];
+    int front = 0, rear = 0;
+    int visites[MAX_SOMMETS] = {0};  // Tableau de visites
 
-// Ajouter un arc au graphe
-void ajouter_arc(const char *source, const char *cible) {
-    strcpy(arcs[nb_arcs].source, source);
-    strcpy(arcs[nb_arcs].cible, cible);
-    nb_arcs++;
-}
+    // Ajouter le sommet de départ à la file et marquer comme visité
+    file[rear++] = index_depart;
+    visites[index_depart] = 1;
+
+    int sommet_courant;
+    while (front < rear) {
+        sommet_courant = file[front++];  // Retirer le sommet de la file
 
 
+        // Parcourir les successeurs du sommet courant
+        for (int i = 0; i < reseau->sommets[sommet_courant].nb_successeurs; i++) {
+            int index_successeur = -1;
+            // Trouver l'index du successeur
+            for (int j = 0; j < reseau->nb_sommets; j++) {
+                if (strcmp(reseau->sommets[j].nom, reseau->sommets[sommet_courant].successeurs[i]) == 0) {
+                    index_successeur = j;
+                    break;
+                }
+            }
 
-// Fonction pour calculer les niveaux et prédécesseurs des sommets
-void calculer_niveaux() {
-    // Initialiser les niveaux des sommets
-    for (int i = 0; i < nb_sommets; i++) {
-        sommets[i].niveau = -1;
-        sommets[i].nb_predecesseurs = 0;
+            // Si le successeur n'a pas été visité, l'ajouter à la file
+            if (index_successeur != -1 && !visites[index_successeur]) {
+                file[rear++] = index_successeur;
+                visites[index_successeur] = 1;
+            }
+        }
+
+        // Ajouter aussi les sommets voisins (précédents) dans la file
+        for (int i = 0; i < reseau->nb_sommets; i++) {
+            for (int j = 0; j < reseau->sommets[i].nb_successeurs; j++) {
+                if (strcmp(reseau->sommets[i].successeurs[j], reseau->sommets[sommet_courant].nom) == 0) {
+                    int index_voisin = i;
+                    // Si le voisin n'a pas été visité, l'ajouter à la file
+                    if (!visites[index_voisin]) {
+                        file[rear++] = index_voisin;
+                        visites[index_voisin] = 1;
+                    }
+                }
+            }
+        }
     }
 
-    // Les sommets sans prédécesseurs sont au niveau 1
-    for (int i = 0; i < nb_sommets; i++) {
+    // Vérifier si tous les sommets ont été visités
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        if (!visites[i]) {
+            printf("Le sommet %s n'est pas atteint.\n", reseau->sommets[i].nom);
+            return 0;  // Sommet non accessible
+        }
+    }
+
+    printf("\nTous les sommets sont accessibles a partir de %s.\n", reseau->sommets[index_depart].nom);
+    return 1;  // Tous les sommets sont accessibles
+}
+
+// Fonction pour vérifier la connexité du graphe
+int est_connexe(Reseau *reseau) {
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        if (!bfs(reseau, i)) {
+            return 0;  // Si un BFS échoue, le graphe n'est pas connexe
+        }
+    }
+
+    return 1;  // Tous les BFS ont réussi, le graphe est connexe
+}
+
+// Ajouter un sommet
+int ajouter_sommet(Reseau *reseau, const char *nom, float population, float capacite, float croissance) {
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        if (strcmp(reseau->sommets[i].nom, nom) == 0) {
+            return i;
+        }
+    }
+    strcpy(reseau->sommets[reseau->nb_sommets].nom, nom);
+    reseau->sommets[reseau->nb_sommets].niveau = -1;
+    reseau->sommets[reseau->nb_sommets].nb_predecesseurs = 0;
+    reseau->sommets[reseau->nb_sommets].nb_successeurs = 0;
+    reseau->sommets[reseau->nb_sommets].population = population ;
+    reseau->sommets[reseau->nb_sommets].capacite = capacite ;
+    reseau->sommets[reseau->nb_sommets].croissance = croissance ;
+    return reseau->nb_sommets++;
+}
+
+// Ajouter un arc avec pondération
+void ajouter_arc(Reseau *reseau, const char *source, const char *cible, float poids) {
+    strcpy(reseau->arcs[reseau->nb_arcs].source, source);
+    strcpy(reseau->arcs[reseau->nb_arcs].cible, cible);
+    reseau->arcs[reseau->nb_arcs].poids = poids;
+    reseau->nb_arcs++;
+}
+
+// Afficher les sommets avec leurs niveaux
+void afficher_tous_les_sommets(const Reseau *reseau) {
+    printf("\n Liste des sommets avec leurs niveaux :\n");
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        printf("- %s : Niveau %d , population : %f \n", reseau->sommets[i].nom, reseau->sommets[i].niveau, reseau->sommets[i].population);
+    }
+}
+
+
+// Calcul des niveaux des sommets
+void calculer_niveaux(Reseau *reseau) {
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        reseau->sommets[i].niveau = -1;
+        reseau->sommets[i].nb_predecesseurs = 0;
+        reseau->sommets[i].nb_successeurs = 0;
+    }
+
+    for (int i = 0; i < reseau->nb_sommets; i++) {
         int est_source = 1;
-        for (int j = 0; j < nb_arcs; j++) {
-            if (strcmp(sommets[i].nom, arcs[j].cible) == 0) {
+        for (int j = 0; j < reseau->nb_arcs; j++) {
+            if (strcmp(reseau->sommets[i].nom, reseau->arcs[j].cible) == 0) {
                 est_source = 0;
                 break;
             }
         }
         if (est_source) {
-            sommets[i].niveau = 1;
+            reseau->sommets[i].niveau = 1;
         }
     }
 
-    // Explorer les niveaux suivants
-    int niveau_actuel = 1;
     int progression;
     do {
         progression = 0;
-        for (int i = 0; i < nb_arcs; i++) {
+        for (int i = 0; i < reseau->nb_arcs; i++) {
             int index_source = -1, index_cible = -1;
-            for (int j = 0; j < nb_sommets; j++) {
-                if (strcmp(sommets[j].nom, arcs[i].source) == 0) index_source = j;
-                if (strcmp(sommets[j].nom, arcs[i].cible) == 0) index_cible = j;
+            for (int j = 0; j < reseau->nb_sommets; j++) {
+                if (strcmp(reseau->sommets[j].nom, reseau->arcs[i].source) == 0) index_source = j;
+                if (strcmp(reseau->sommets[j].nom, reseau->arcs[i].cible) == 0) index_cible = j;
             }
-
-            if (sommets[index_source].niveau == niveau_actuel) {
-                // Ajout du prédécesseur pour la cible
-                if (sommets[index_cible].niveau == -1) {
-                    sommets[index_cible].niveau = niveau_actuel + 1;
-                    strcpy(sommets[index_cible].predecesseurs[sommets[index_cible].nb_predecesseurs++], arcs[i].source);
+            if (index_source != -1 && index_cible != -1) {
+                int nouveau_niveau = reseau->sommets[index_source].niveau + 1;
+                if (reseau->sommets[index_cible].niveau < nouveau_niveau) {
+                    reseau->sommets[index_cible].niveau = nouveau_niveau;
                     progression = 1;
-                } else if (sommets[index_cible].niveau == niveau_actuel + 1) {
-                    strcpy(sommets[index_cible].predecesseurs[sommets[index_cible].nb_predecesseurs++], arcs[i].source);
+                }
+
+                int deja_present = 0;
+                for (int k = 0; k < reseau->sommets[index_cible].nb_predecesseurs; k++) {
+                    if (strcmp(reseau->sommets[index_cible].predecesseurs[k], reseau->sommets[index_source].nom) == 0) {
+                        deja_present = 1;
+                        break;
+                    }
+                }
+                if (!deja_present) {
+                    strcpy(reseau->sommets[index_cible].predecesseurs[reseau->sommets[index_cible].nb_predecesseurs++], reseau->sommets[index_source].nom);
+                }
+
+                deja_present = 0;
+                for (int k = 0; k < reseau->sommets[index_source].nb_successeurs; k++) {
+                    if (strcmp(reseau->sommets[index_source].successeurs[k], reseau->sommets[index_cible].nom) == 0) {
+                        deja_present = 1;
+                        break;
+                    }
+                }
+                if (!deja_present) {
+                    strcpy(reseau->sommets[index_source].successeurs[reseau->sommets[index_source].nb_successeurs++], reseau->sommets[index_cible].nom);
                 }
             }
         }
-        niveau_actuel++;
     } while (progression);
 }
 
+// Afficher les arêtes et leurs pondérations
+void afficher_arcs(const Reseau *reseau) {
+    printf("\nListe des aretes et leurs ponderations :\n\n");
+    for (int i = 0; i < reseau->nb_arcs; i++) {
+        printf("%s -> %s : %.2f\n", reseau->arcs[i].source, reseau->arcs[i].cible, reseau->arcs[i].poids);
+    }
+}
 
-// Afficher les prédécesseurs récursivement
-void afficher_predecesseurs(const char *sommet, char chemin[][50], int profondeur) {
+// Fonction pour réinitialiser les données du réseau
+void reset_reseau(Reseau *reseau) {
+    reseau->nb_sommets = 0; // Réinitialiser le nombre de sommets
+    for (int i = 0; i < MAX_SOMMETS; i++) {
+        reseau->sommets[i].nb_successeurs = 0; // Réinitialiser les successeurs de chaque sommet
+        memset(reseau->sommets[i].nom, 0, sizeof(reseau->sommets[i].nom)); // Effacer le nom du sommet
+    }
+    reseau->nb_arcs = 0;
+    for (int i = 0; i < MAX_SOMMETS; i++) {
+
+        reseau->arcs[i].poids = 0; // Réinitialiser les successeurs de chaque sommet
+        memset(reseau->arcs[i].cible, 0, sizeof(reseau->arcs[i].cible)); // Effacer le nom du sommet
+        memset(reseau->arcs[i].source, 0, sizeof(reseau->arcs[i].source)); // Effacer le nom du sommet
+    }
+
+}
+
+// Charger le fichier
+int charger_fichier(Reseau *reseau, const char *nom_fichier, float population, float capacite, float croissance) {
+    FILE *fichier = fopen(nom_fichier, "r");
+    if (!fichier) {
+        perror("Erreur d ouverture du fichier");
+        return 0;
+    }
+
+    reset_reseau(reseau);
+    int nombre_sommets, nombre_arcs;
+    fscanf(fichier, "%d", &nombre_sommets);
+    for (int i = 0; i < nombre_sommets; i++) {
+        char nom[50];
+        fscanf(fichier, "%s %f %f", nom, &population, &croissance);
+        ajouter_sommet(reseau, nom, population, 1500, croissance);
+    }
+
+    fscanf(fichier, "%d", &nombre_arcs);
+    for (int i = 0; i < nombre_arcs; i++) {
+        char source[50], cible[50];
+        float poids;
+
+        fscanf(fichier, "%s %s %f ", source, cible, &poids); // Modifier en float pour les poids
+        ajouter_arc(reseau, source, cible, poids);
+    }
+    fclose(fichier);
+    return 1;
+}
+
+void calculer_capacites(Reseau *reseau) {
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        int c = 0;
+        int predateur = 0;
+
+        for (int j = 0; j < reseau->nb_arcs; j++) {
+            // Vérifie si le sommet courant est une cible d'un arc
+            if (strcmp(reseau->arcs[j].cible, reseau->sommets[i].nom) == 0) {
+                predateur = 1;
+
+                // Trouve la population du sommet source
+                for (int k = 0; k < reseau->nb_sommets; k++) {
+                    if (strcmp(reseau->arcs[j].source, reseau->sommets[k].nom) == 0) {
+                        c += reseau->arcs[j].poids * reseau->sommets[k].population;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (predateur == 1) {
+            reseau->sommets[i].capacite = c;
+        }
+
+        if (reseau->sommets[i].capacite < 1) {
+            reseau->sommets[i].capacite = 1; // Évite une division par 0
+        }
+    }
+}
+
+void calculer_impact_predation(Reseau *reseau) {
+    printf("\nImpact de predation : \n");
+
+    for (int i = 0; i < reseau->nb_arcs; i++) {
+        char *source_nom = reseau->arcs[i].source; // Proie
+        char *cible_nom = reseau->arcs[i].cible;   // Prédateur
+
+        Sommet *source = NULL;
+        Sommet *cible = NULL;
+
+        // Recherche des sommets source et cible dans le tableau des sommets
+        for (int j = 0; j < reseau->nb_sommets; j++) {
+            if (strcmp(reseau->sommets[j].nom, source_nom) == 0) {
+                source = &reseau->sommets[j];
+            }
+            if (strcmp(reseau->sommets[j].nom, cible_nom) == 0) {
+                cible = &reseau->sommets[j];
+            }
+        }
+
+        if (source == NULL || cible == NULL) {
+            printf("Erreur : Sommet source ou cible non trouve pour l arc %d.\n", i);
+            continue;
+        }
+
+        if (source->population > 0) { // Évite la division par zéro
+            // Quantité de proie consommée par le prédateur
+            double quantite_predation = reseau->arcs[i].poids * cible->population;
+
+            // Proportion de la population initiale de la proie
+            double proportion = quantite_predation / source->population;
+
+            printf("  %s -> %s : %.3f de la population de %s consommee\n",
+                   source->nom, cible->nom, proportion, source->nom);
+        } else {
+            // Cas où la population de la proie est nulle
+            printf("  %s -> %s : Population de %s est nulle, pas de predation.\n",
+                   source->nom, cible->nom, source->nom);
+        }
+    }
+}
+
+
+void mettre_a_jour_populations(Reseau *reseau) {
+    double nouvelles_populations[MAX_SOMMETS];
+
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        // Calcul de la croissance de la population pour le sommet `i`
+        double croissance = reseau->sommets[i].population +
+                            reseau->sommets[i].croissance * reseau->sommets[i].population *
+                            (1 - reseau->sommets[i].population / reseau->sommets[i].capacite);
+
+        double predation = 0;
+
+        // Recherche des arcs où le sommet `i` est la source (proie)
+        for (int j = 0; j < reseau->nb_arcs; j++) {
+            if (strcmp(reseau->arcs[j].source, reseau->sommets[i].nom) == 0) {
+                // Sommet cible de l'arc
+                for (int k = 0; k < reseau->nb_sommets; k++) {
+                    if (strcmp(reseau->arcs[j].cible, reseau->sommets[k].nom) == 0) {
+                        predation += reseau->arcs[j].poids * reseau->sommets[k].population;
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Mise à jour de la nouvelle population pour le sommet `i`
+        nouvelles_populations[i] = croissance - predation;
+        if (nouvelles_populations[i] < 0) {
+            nouvelles_populations[i] = 0; // Évite des populations négatives
+        }
+    }
+
+    // Mise à jour des populations dans le réseau
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        reseau->sommets[i].population = nouvelles_populations[i];
+    }
+}
+
+// Afficher les populations
+void afficher_populations(Reseau *reseau, int etape) {
+    printf("\nEtape %d :\n", etape);
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        printf("  %s : Population = %.2f\n",
+               reseau->sommets[i].nom,
+               reseau->sommets[i].population);
+    }
+}
+
+
+// Fonction pour afficher les espèces disponibles
+void afficher_especes(Reseau *reseau) {
+    printf("\nEspeces disponibles :\n");
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        printf("  %d. %s (Population: %.2f, Croissance: %.2f, Capacite: %.2f)\n",
+               i + 1,
+               reseau->sommets[i].nom,
+               reseau->sommets[i].population,
+               reseau->sommets[i].croissance,
+               reseau->sommets[i].capacite);
+    }
+}
+
+
+// Fonction pour modifier une espèce
+void modifier_espece(Reseau *reseau) {
+    int choix;
+    afficher_especes(reseau);
+    printf("\nEntrez le numero de l espece a modifier : ");
+    scanf("%d", &choix);
+
+    if (choix < 1 || choix > reseau->nb_sommets) {
+        printf("Numero invalide. Retour au menu principal.\n");
+        return;
+    }
+
+    Sommet *espece = &reseau->sommets[choix - 1];
+
+    printf("\nModification de l espece %s :\n", espece->nom);
+
+    // Modifier la population
+    printf("Population actuelle : %.2f\n", espece->population);
+    printf("Entrez une nouvelle population (ou -1 pour ne pas modifier) : ");
+    double nouvelle_population;
+    scanf("%lf", &nouvelle_population);
+    if (nouvelle_population >= 0) {
+        espece->population = nouvelle_population;
+    }
+
+    // Modifier le taux de croissance
+    printf("Croissance actuelle : %.2f\n", espece->croissance);
+    printf("Entrez un nouveau taux de croissance (ou -1 pour ne pas modifier) : ");
+    double nouvelle_croissance;
+    scanf("%lf", &nouvelle_croissance);
+    if (nouvelle_croissance >= 0) {
+        espece->croissance = nouvelle_croissance;
+    }
+
+    // Modifier la capacité
+    printf("Capacite actuelle : %.2f\n", espece->capacite);
+    printf("Entrez une nouvelle capacite (ou -1 pour ne pas modifier) : ");
+    double nouvelle_capacite;
+    scanf("%lf", &nouvelle_capacite);
+    if (nouvelle_capacite >= 0) {
+        espece->capacite = nouvelle_capacite;
+    }
+
+    printf("Les modifications ont ete appliquees.\n");
+}
+
+
+
+// Fonction récursive pour afficher les chemins des prédécesseurs
+void reconstruire_chemins(const Reseau *reseau, const char *sommet, char chemin[][50], int profondeur) {
     int index = -1;
-    for (int i = 0; i < nb_sommets; i++) {
-        if (strcmp(sommets[i].nom, sommet) == 0) {
+
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        if (strcmp(reseau->sommets[i].nom, sommet) == 0) {
             index = i;
             break;
         }
     }
 
-    // Si le sommet a des prédécesseurs
-    if (index != -1 && sommets[index].nb_predecesseurs > 0) {
-        for (int i = 0; i < sommets[index].nb_predecesseurs; i++) {
-            strcpy(chemin[profondeur], sommets[index].predecesseurs[i]);
+    if (index == -1) {
+        return;
+    }
 
-            // Construire la chaîne complète du chemin
-            char chemin_complet[256] = "";
-            for (int j = profondeur; j >= 0; j--) {
-                strcat(chemin_complet, chemin[j]);
-                if (j > 0) strcat(chemin_complet, "->");
-            }
+    strcpy(chemin[profondeur], sommet);
 
-            // Afficher le chemin complet
-            printf("%s\n", chemin_complet);
-
-            // Appel récursif pour continuer avec les prédécesseurs
-            afficher_predecesseurs(sommets[index].predecesseurs[i], chemin, profondeur + 1);
+    if (reseau->sommets[index].nb_predecesseurs == 0) {
+        for (int i = profondeur; i >= 0; i--) {
+            printf("%s", chemin[i]);
+            if (i > 0) printf(" -> ");
         }
+        printf("\n");
+        return;
+    }
+
+    for (int i = 0; i < reseau->sommets[index].nb_predecesseurs; i++) {
+        reconstruire_chemins(reseau, reseau->sommets[index].predecesseurs[i], chemin, profondeur + 1);
     }
 }
 
-// Afficher les sommets et leurs prédécesseurs par niveau
-void afficher_niveaux_et_predecesseurs(int niveau_selectionne) {
-    printf("Affichage des sommets au niveau %d :\n", niveau_selectionne);
-    for (int i = 0; i < nb_sommets; i++) {
-        if (sommets[i].niveau == niveau_selectionne) {
-            printf("Sommet: %s, Niveau: %d\n", sommets[i].nom, sommets[i].niveau);
-            printf("  Prédécesseurs: \n");
-            // Tableau temporaire pour stocker le chemin
-            char chemin[MAX_CHEMIN][50];
-            afficher_predecesseurs(sommets[i].nom, chemin, 0);
+#include <stdio.h>
+
+void modifier_croissance(Reseau *reseau) {
+    int choix;
+    printf("Souhaitez-vous activer le facteur humain ? (1 = Oui, 0 = Non) : ");
+    scanf("%d", &choix);
+
+    if (choix == 1) {
+        printf("Facteur humain activé : le taux de croissance sera ajusté.\n");
+        for (int i = 0; i < reseau->nb_sommets; i++) {
+            reseau->sommets[i].croissance /= 1.33; // Division par 1.33
+        }
+    } else {
+        printf("Facteur humain désactivé : le taux de croissance reste inchangé.\n");
+    }
+}
+
+// Fonction pour calculer et trier les sommets par leur degré
+void trier_sommets_par_degre(Reseau *reseau) {
+    // Calcul du degré de chaque sommet
+    int degres[MAX_SOMMETS] = {0};
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        degres[i] = reseau->sommets[i].nb_successeurs + reseau->sommets[i].nb_predecesseurs;
+    }
+
+    // Tri des sommets par leur degré (tri à bulle simple pour l'exemple)
+    for (int i = 0; i < reseau->nb_sommets - 1; i++) {
+        for (int j = i + 1; j < reseau->nb_sommets; j++) {
+            if (degres[i] < degres[j]) {
+                // Échange des sommets
+                Sommet temp = reseau->sommets[i];
+                reseau->sommets[i] = reseau->sommets[j];
+                reseau->sommets[j] = temp;
+
+                // Échange des degrés
+                int temp_degre = degres[i];
+                degres[i] = degres[j];
+                degres[j] = temp_degre;
+            }
         }
     }
+
+    // Affichage des sommets triés par leur degré
+    printf("\nSommets classes par leur degre (du plus eleve au plus bas) :\n");
+    for (int i = 0; i < reseau->nb_sommets; i++) {
+        printf("- %s : Degre %d\n", reseau->sommets[i].nom, degres[i]);
+    }
+}
+
+
+
+
+
+
+void afficher_menu_principal() {
+    printf(CYAN "\n=== Menu Principal ===\n" RESET);
+    printf("1. Charger un fichier\n");
+    printf("2. Analyser le reseau trophique\n");
+    printf("3. Simulation\n");
+    printf("4. Quitter\n");
+    printf("Votre choix : ");
+}
+
+void afficher_menu_analyse() {
+    printf(YELLOW "\n=== Analyse du Reseau Trophique ===\n" RESET);
+    printf("1. Afficher les sommets d'un niveau avec leurs relations\n");
+    printf("2. Afficher les chaines de predecesseurs d'un sommet\n");
+    printf("3. Afficher les aretes et leurs ponderations\n");
+    printf("4. Afficher les premiers maillons de la chaine alimentaire\n");
+    printf("5. Afficher les sommets sans predateurs\n");
+    printf("6. Afficher les sommets n'ayant qu'une seule source d'alimentation\n");
+    printf("7. Connexite du graphe\n");
+    printf("8. Classer les sommets par leur degre\n");  // Nouvelle option
+    printf("9. Questions reseau trophique\n");
+    printf("10. Retour au menu principal\n");
+    printf("Votre choix : ");
+}
+
+
+// Mise à jour du menu simulation
+void afficher_menu_simulation() {
+    printf(MAGENTA "\n=== Simulation ===\n" RESET);
+    printf("1. Modifier une espece\n");
+    printf("2. Lancer une simulation\n");
+    printf("3. Appliquer un facteur humain sur une espece\n");
+    printf("4. Retour au menu principal\n");
+    printf("Votre choix : ");
 }
 
 int main() {
-    FILE *fichier = fopen("doc.txt", "r");
-    if (!fichier) {
-        perror("Erreur d'ouverture du fichier");
-        return 1;
-    }
+    Reseau reseau = {0};
+    int choix_principal, choix_analyse, choix_simulation;
+    char fichier[50];
+    int niveau;
+    char sommet[50];
 
-    int nombre_sommets, nombre_arcs;
-
-    // Lire le nombre de sommets
-    if (fscanf(fichier, "%d", &nombre_sommets) != 1) {
-        fprintf(stderr, "Erreur de lecture du nombre de sommets.\n");
-        fclose(fichier);
-        return 1;
-    }
-    printf("Nombre de sommets : %d\n", nombre_sommets);  // Diagnostic
-
-    // Lire les noms des sommets
-    for (int i = 0; i < nombre_sommets; i++) {
-        char nom[50];
-        if (fscanf(fichier, "%s", nom) != 1) {
-            fprintf(stderr, "Erreur de lecture du sommet %d.\n", i + 1);
-            fclose(fichier);
-            return 1;
-        }
-        ajouter_sommet(nom);
-    }
-
-    // Lire le nombre d'arcs
-    if (fscanf(fichier, "%d", &nombre_arcs) != 1) {
-        fprintf(stderr, "Erreur de lecture du nombre d'arcs.\n");
-        fclose(fichier);
-        return 1;
-    }
-    printf("Nombre d'arcs : %d\n", nombre_arcs);  // Diagnostic
-
-    // Lire les arcs
-    for (int i = 0; i < nombre_arcs; i++) {
-        char source[50], cible[50];
-        if (fscanf(fichier, "%s %s", source, cible) != 2) {
-            fprintf(stderr, "Erreur de lecture de l'arc %d.\n", i + 1);
-            fclose(fichier);
-            return 1;
-        }
-        ajouter_arc(source, cible);
-    }
-
-    fclose(fichier);
-
-    // Calculer les niveaux et les prédécesseurs
-    calculer_niveaux();
-
-    int niveau_selectionne;
     while (1) {
-        // Demander à l'utilisateur de choisir un niveau
-        printf("Choisissez un niveau (1-4) ou tapez 5 pour quitter : ");
-        scanf("%d", &niveau_selectionne);
+        afficher_menu_principal();
+        scanf("%d", &choix_principal);
 
-        if (niveau_selectionne == 5) {
-            printf("Fin du programme.\n");
-            break; // Quitter le programme
-        } else if (niveau_selectionne >= 1 && niveau_selectionne <= 4) {
-            afficher_niveaux_et_predecesseurs(niveau_selectionne);
-        } else {
-            printf("Choix invalide. Veuillez entrer un nombre entre 1 et 5.\n");
+        switch (choix_principal) {
+            case 1:
+                // Charger un fichier
+                printf("\nEntrez le nom du fichier (ex: doc.txt) : ");
+                scanf("%s", fichier);
+                if (!charger_fichier(&reseau, fichier, 0, 0, 0)) {
+                    printf(RED "Erreur lors du chargement du fichier.\n" RESET);
+                } else {
+                    printf(GREEN "Fichier charge avec succes !\n" RESET);
+                    calculer_niveaux(&reseau);
+
+
+                    // Afficher les sommets et les arcs après avoir chargé le fichier
+                    afficher_tous_les_sommets(&reseau);  // Affiche tous les sommets
+
+                }
+                break;
+
+            case 2:
+                // Menu analyse
+                do {
+                    afficher_menu_analyse();
+                    scanf("%d", &choix_analyse);
+
+                    switch (choix_analyse) {
+                        case 1:
+                            // Afficher sommets d'un niveau
+
+                            printf("Entrez un niveau : ");
+                            scanf("%d", &niveau);
+                            printf("Sommets au niveau %d et leurs relations :\n", niveau);
+                            for (int i = 0; i < reseau.nb_sommets; i++) {
+                                if (reseau.sommets[i].niveau == niveau) {
+                                    printf("- %s :\n", reseau.sommets[i].nom);
+                                    printf("  Successeurs : ");
+                                    for (int j = 0; j < reseau.sommets[i].nb_successeurs; j++) {
+                                        printf("%s ", reseau.sommets[i].successeurs[j]);
+                                    }
+                                    printf("\n  Predecesseurs : ");
+                                    for (int j = 0; j < reseau.sommets[i].nb_predecesseurs; j++) {
+                                        printf("%s ", reseau.sommets[i].predecesseurs[j]);
+                                    }
+                                    printf("\n");
+                                }
+                            }
+                            break;
+
+                        case 2:
+                            // Afficher chaines de prédécesseurs
+
+                            printf("Entrez le nom du sommet : ");
+                            scanf("%s", sommet);
+                            printf("Chaines de predecesseurs pour %s :\n", sommet);
+                            char chemin[MAX_CHEMIN][50];
+                            reconstruire_chemins(&reseau, sommet, chemin, 0);
+                            break;
+
+                        case 3:
+                            // Afficher arcs
+                            afficher_arcs(&reseau);
+                            break;
+
+                        case 4:
+
+                            afficher_premiers_maillons(&reseau);
+                            break;
+
+                        case 5:
+
+                            afficher_sans_predateurs(&reseau);
+                            break;
+
+                        case 6:
+
+                            afficher_sommets_une_seule_source(&reseau);
+                            break;
+
+                        case 7:
+
+                            if (est_connexe(&reseau)) {
+                                printf( GREEN "Le graphe est connexe.\n" RESET);
+                            } else {
+                                printf( RED "Le graphe n'est pas connexe.\n" RESET);
+                            }
+
+                            break;
+
+                        case 9:
+                            printf(RED "\n Niveau trophique maximal:\n " RESET
+                                   "Reseau savane:" GREEN "4\n" RESET
+                                   "Reseau aquatique:" GREEN"5\n" RESET
+                                   "Reseau champignon: "GREEN "6\n\n "RESET);
+                            printf(RED"Dans les reseaux trophiques en general ?\n"RESET
+                                   "4 a 6 niveaux maximum \n\n"
+                                   RED "Qu'est-ce qui limite la hauteur trophique ?\n" RESET
+                                   "La hauteur trophique est limite, en effet 90 %% de l energie disponible est perdue, donc seulement 10 %% est transferee au niveau suivant. \n"
+                                   "Ex :\n"
+                                   "10 000 Kcal -> 1000 k cal -> 100 kcal - > 10 kcal \n"
+                                   "Au final il ne reste pas enormement de Kcal pour les derniers niveaux, "
+                                   "ils ne peuvent donc pas se reproduire a l infini et il ne peut pas y avoir de niveaux trop eleves. "
+                                   "De plus nous avons remarques que plus une chaine est longue plus les petites perturbations posent problemes aux niveaux superieurs.\n");
+
+                            break;
+
+                        case 8:
+                            // Retour au menu principal
+                            trier_sommets_par_degre(&reseau);
+                            break;
+
+                        case 10:
+                            // Retour au menu principal
+                            break;
+                        default:
+                            printf(RED "Choix invalide.\n" RESET);
+                    }
+                } while (choix_analyse != 10);
+                break;
+
+            case 3:
+                // Menu simulation
+                do {
+                    afficher_menu_simulation();
+                    scanf("%d", &choix_simulation);
+
+                    switch (choix_simulation) {
+                        case 1:
+                            // Modifier une espèce
+                            modifier_espece(&reseau);
+                            break;
+
+                        case 2:
+                            // Lancer la simulation
+                            for (int t = 0; t < 15; t++) {
+                                afficher_populations(&reseau, t);
+                                calculer_capacites(&reseau);
+                                calculer_impact_predation(&reseau);
+                                mettre_a_jour_populations(&reseau);
+                            }
+                            break;
+
+                        case 3:
+                            modifier_croissance(&reseau);
+                            // Retour au menu principal
+                            break;
+
+                        case 4:
+                            // Retour au menu principal
+                            break;
+                        default:
+                            printf(RED "Choix invalide.\n" RESET);
+                    }
+                } while (choix_simulation != 4);
+                break;
+
+            case 4:
+                // Quitter
+                printf(GREEN "Fin du programme.\n" RESET);
+                return 0;
+
+            default:
+                printf(RED "Choix invalide.\n" RESET);
         }
     }
 
     return 0;
 }
-
-
